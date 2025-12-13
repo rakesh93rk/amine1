@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Levi Interior — Admin Panel</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+body{
+  font-family:'Inter',sans-serif;
+  background:linear-gradient(180deg,#eef2ff 0%,#fff 100%);
+  margin:0;
+  padding:20px;
+  color:#1e293b;
+}
+.container{
+  max-width:900px;
+  margin:auto;
+  background:#fff;
+  border-radius:16px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.08);
+  padding:24px;
+}
+h1{
+  background:linear-gradient(90deg,#2563eb,#06b6d4);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  text-align:center;
+  margin-bottom:20px;
+}
+
+/* INPUT */
+.flex-row{display:flex;gap:10px;margin-bottom:12px;}
+input{
+  width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:8px;font-size:15px;
+}
+.btn-primary{
+  background:linear-gradient(90deg,#2563eb,#06b6d4);
+  color:#fff;border:none;border-radius:8px;font-weight:600;padding:10px 14px;cursor:pointer;
+}
+
+/* RESULT */
+.result-area{
+  display:none;margin-top:12px;padding:10px;background:#f8fafc;
+  border:1px dashed #e2e8f0;border-radius:8px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+
+/* STATUS DOTS */
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block;}
+.green{background:#22c55e;}
+.red{background:#ef4444;}
+
+/* TABLE */
+.table-wrapper{width:100%;overflow-x:auto;margin-top:20px;}
+table{width:100%;min-width:950px;border-collapse:collapse;}
+th,td{
+  border:1px solid #e2e8f0;padding:8px;font-size:14px;
+  text-align:center;white-space:nowrap;
+}
+
+/* ACTION COLUMN */
+.action-col{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+/* ICON BUTTONS */
+.action-btn{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  font-size:13px;
+  border-radius:6px;
+  border:1px solid transparent;
+  cursor:pointer;
+  transition:0.2s;
+  background:#f8fafc;
+}
+
+.btn-copy{color:#2563eb;border-color:#bfdbfe;}
+.btn-copy:hover{background:#e0f2fe;}
+
+.btn-disable{color:#ea580c;border-color:#fed7aa;}
+.btn-disable:hover{background:#ffedd5;}
+
+.btn-force{color:#7c3aed;border-color:#ddd6fe;}
+.btn-force:hover{background:#ede9fe;}
+
+.btn-delete{color:#dc2626;border-color:#fecaca;}
+.btn-delete:hover{background:#fee2e2;}
+
+/* MOBILE */
+@media(max-width:768px){
+  .flex-row{flex-direction:column;}
+  h1{font-size:22px;}
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+<h1>Levi Interior — Admin Panel</h1>
+
+<div class="flex-row">
+  <input id="name" placeholder="Enter Name">
+  <input id="mobile" placeholder="Enter Mobile Number">
+  <button class="btn-primary" id="generateBtn">Generate ID / Password</button>
+</div>
+
+<div id="resultArea" class="result-area">
+  <div id="resultMsg"></div>
+  <button class="action-btn btn-copy" id="copyLatest">📋 Copy</button>
+</div>
+
+<div class="table-wrapper">
+<table id="userTable">
+<thead>
+<tr>
+  <th>ID</th>
+  <th>Name</th>
+  <th>Mobile</th>
+  <th>Password</th>
+  <th>DeviceID</th>
+  <th>Active</th>
+  <th>Disabled</th>
+  <th>Action</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+
+<script>
+const API_BASE="https://levi-api-i095.onrender.com/api";
+const resultArea=document.getElementById("resultArea");
+const resultMsg=document.getElementById("resultMsg");
+const copyLatest=document.getElementById("copyLatest");
+let latestCred="";
+
+copyLatest.onclick=()=>navigator.clipboard.writeText(latestCred);
+
+function showResult(t){
+  latestCred=t;
+  resultMsg.innerText=t;
+  resultArea.style.display="flex";
+}
+
+async function loadUsers(){
+  const tbody=document.querySelector("#userTable tbody");
+  tbody.innerHTML="";
+  const res=await fetch(API_BASE+"/staff");
+  const users=await res.json();
+
+  users.forEach(u=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${u.userId}</td>
+      <td>${u.name}</td>
+      <td>${u.mobile}</td>
+      <td>${u.password}</td>
+      <td>${u.deviceid||"-"}</td>
+      <td>${u.active?'<span class="dot green"></span>':'<span class="dot red"></span>'}</td>
+      <td>${u.disabled?'<span class="dot red"></span>':'<span class="dot green"></span>'}</td>
+      <td class="action-col">
+        <button class="action-btn btn-copy" onclick="copy('${u.userId}:${u.password}')">📋 Copy</button>
+        <button class="action-btn btn-disable" onclick="toggleDisable('${u._id}',${u.disabled})">
+          ${u.disabled?'✅ Enable':'🚫 Disable'}
+        </button>
+        <button class="action-btn btn-force" onclick="forceLogout('${u._id}')">🔐 Force Logout</button>
+        <button class="action-btn btn-delete" onclick="deleteUser('${u._id}')">🗑️ Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function copy(t){navigator.clipboard.writeText(t);}
+
+document.getElementById("generateBtn").onclick=async()=>{
+  const name=document.getElementById("name").value.trim();
+  const mobile=document.getElementById("mobile").value.trim();
+  if(!name||!mobile)return alert("Fill all fields");
+
+  const userId=Math.floor(1000+Math.random()*9000).toString();
+  const password=Math.floor(100000+Math.random()*900000).toString();
+
+  await fetch(API_BASE+"/addstaff",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      userId,name,mobile,password,
+      active:true,deviceid:"",disabled:false
+    })
+  });
+
+  showResult(`${userId}:${password}`);
+  loadUsers();
+};
+
+async function toggleDisable(id,cur){
+  await fetch(API_BASE+"/updatestaff/"+id,{
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({disabled:!cur})
+  });
+  loadUsers();
+}
+
+async function forceLogout(id){
+  await fetch(API_BASE+"/updatestaff/"+id,{
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({deviceid:"",active:false,disabled:false})
+  });
+  loadUsers();
+}
+
+async function deleteUser(id){
+  if(!confirm("Delete this user?"))return;
+  await fetch(API_BASE+"/deletestaff/"+id,{method:"DELETE"});
+  loadUsers();
+}
+
+loadUsers();
+</script>
+</body>
+</html>
