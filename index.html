@@ -34,19 +34,36 @@ h1{
 /* INPUT */
 .flex-row{display:flex;gap:10px;margin-bottom:12px;}
 input{
-  width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:8px;font-size:15px;
+  width:100%;
+  padding:10px;
+  border:1px solid #e5e7eb;
+  border-radius:8px;
+  font-size:15px;
 }
 .btn-primary{
   background:linear-gradient(90deg,#2563eb,#06b6d4);
-  color:#fff;border:none;border-radius:8px;font-weight:600;padding:10px 14px;cursor:pointer;
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  font-weight:600;
+  padding:10px 14px;
+  cursor:pointer;
 }
 
 /* RESULT */
 .result-area{
-  display:none;margin-top:12px;padding:10px;background:#f8fafc;
-  border:1px dashed #e2e8f0;border-radius:8px;
-  display:flex;justify-content:space-between;align-items:center;
+  display:none;
+  margin-top:12px;
+  padding:12px;
+  background:#f8fafc;
+  border:1px dashed #e2e8f0;
+  border-radius:8px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
 }
+.result-area span{font-weight:600;}
 
 /* STATUS DOTS */
 .dot{width:12px;height:12px;border-radius:50%;display:inline-block;}
@@ -57,8 +74,11 @@ input{
 .table-wrapper{width:100%;overflow-x:auto;margin-top:20px;}
 table{width:100%;min-width:950px;border-collapse:collapse;}
 th,td{
-  border:1px solid #e2e8f0;padding:8px;font-size:14px;
-  text-align:center;white-space:nowrap;
+  border:1px solid #e2e8f0;
+  padding:8px;
+  font-size:14px;
+  text-align:center;
+  white-space:nowrap;
 }
 
 /* ACTION COLUMN */
@@ -76,8 +96,8 @@ th,td{
   padding:6px 10px;
   font-size:13px;
   border-radius:6px;
-  border:1px solid transparent;
   cursor:pointer;
+  border:1px solid transparent;
   transition:0.2s;
   background:#f8fafc;
 }
@@ -94,7 +114,6 @@ th,td{
 .btn-delete{color:#dc2626;border-color:#fecaca;}
 .btn-delete:hover{background:#fee2e2;}
 
-/* MOBILE */
 @media(max-width:768px){
   .flex-row{flex-direction:column;}
   h1{font-size:22px;}
@@ -113,7 +132,7 @@ th,td{
 </div>
 
 <div id="resultArea" class="result-area">
-  <div id="resultMsg"></div>
+  <span id="resultMsg"></span>
   <button class="action-btn btn-copy" id="copyLatest">📋 Copy</button>
 </div>
 
@@ -137,93 +156,113 @@ th,td{
 </div>
 
 <script>
-const API_BASE="https://levi-api-i095.onrender.com/api";
-const resultArea=document.getElementById("resultArea");
-const resultMsg=document.getElementById("resultMsg");
-const copyLatest=document.getElementById("copyLatest");
-let latestCred="";
+const API_BASE = "https://levi-api-i095.onrender.com/api";
 
-copyLatest.onclick=()=>navigator.clipboard.writeText(latestCred);
+const resultArea = document.getElementById("resultArea");
+const resultMsg  = document.getElementById("resultMsg");
+const copyLatest = document.getElementById("copyLatest");
 
-function showResult(t){
-  latestCred=t;
-  resultMsg.innerText=t;
-  resultArea.style.display="flex";
+let latestCred = "";
+copyLatest.onclick = () => navigator.clipboard.writeText(latestCred);
+
+function showResult(text){
+  latestCred = text;
+  resultMsg.innerText = text;
+  resultArea.style.display = "flex";
 }
 
+/* LOAD USERS */
 async function loadUsers(){
-  const tbody=document.querySelector("#userTable tbody");
-  tbody.innerHTML="";
-  const res=await fetch(API_BASE+"/staff");
-  const users=await res.json();
+  const tbody = document.querySelector("#userTable tbody");
+  tbody.innerHTML = "";
+  const res = await fetch(API_BASE + "/staff");
+  const users = await res.json();
 
   users.forEach(u=>{
-    const tr=document.createElement("tr");
-    tr.innerHTML=`
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
       <td>${u.userId}</td>
       <td>${u.name}</td>
       <td>${u.mobile}</td>
       <td>${u.password}</td>
-      <td>${u.deviceid||"-"}</td>
-      <td>${u.active?'<span class="dot green"></span>':'<span class="dot red"></span>'}</td>
-      <td>${u.disabled?'<span class="dot red"></span>':'<span class="dot green"></span>'}</td>
+      <td>${u.deviceid || "-"}</td>
+      <td>${u.active ? '<span class="dot green"></span>' : '<span class="dot red"></span>'}</td>
+      <td>${u.disabled ? '<span class="dot red"></span>' : '<span class="dot green"></span>'}</td>
       <td class="action-col">
-        <button class="action-btn btn-copy" onclick="copy('${u.userId}:${u.password}')">📋 Copy</button>
-        <button class="action-btn btn-disable" onclick="toggleDisable('${u._id}',${u.disabled})">
-          ${u.disabled?'✅ Enable':'🚫 Disable'}
+        <button class="action-btn btn-copy"
+          onclick="navigator.clipboard.writeText('${u.userId}:${u.password}')">📋 Copy</button>
+        <button class="action-btn btn-disable"
+          onclick="toggleDisable('${u._id}', ${u.disabled})">
+          ${u.disabled ? '✅ Enable' : '🚫 Disable'}
         </button>
-        <button class="action-btn btn-force" onclick="forceLogout('${u._id}')">🔐 Force Logout</button>
-        <button class="action-btn btn-delete" onclick="deleteUser('${u._id}')">🗑️ Delete</button>
+        <button class="action-btn btn-force"
+          onclick="forceLogout('${u._id}')">🔐 Force Logout</button>
+        <button class="action-btn btn-delete"
+          onclick="deleteUser('${u._id}')">🗑️ Delete</button>
       </td>
     `;
     tbody.appendChild(tr);
   });
+
+  return users;
 }
 
-function copy(t){navigator.clipboard.writeText(t);}
+/* GENERATE */
+document.getElementById("generateBtn").onclick = async () => {
+  const name = document.getElementById("name").value.trim();
+  const mobile = document.getElementById("mobile").value.trim();
+  if(!name || !mobile) return alert("Fill all fields");
 
-document.getElementById("generateBtn").onclick=async()=>{
-  const name=document.getElementById("name").value.trim();
-  const mobile=document.getElementById("mobile").value.trim();
-  if(!name||!mobile)return alert("Fill all fields");
+  const password = Math.floor(100000 + Math.random() * 900000).toString();
 
-  const userId=Math.floor(1000+Math.random()*9000).toString();
-  const password=Math.floor(100000+Math.random()*900000).toString();
-
-  await fetch(API_BASE+"/addstaff",{
+  await fetch(API_BASE + "/addstaff",{
     method:"POST",
-    headers:{"Content-Type":"application/json"},
+    headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({
-      userId,name,mobile,password,
-      active:true,deviceid:"",disabled:false
+      name,
+      mobile,
+      password,
+      active:true,
+      deviceid:"",
+      disabled:false
     })
   });
 
-  showResult(`${userId}:${password}`);
-  loadUsers();
+  // 🔥 FIX: get latest user from list
+  const users = await loadUsers();
+  const lastUser = users[users.length - 1];
+
+  showResult(`${lastUser.userId} : ${lastUser.password}`);
 };
 
-async function toggleDisable(id,cur){
-  await fetch(API_BASE+"/updatestaff/"+id,{
+/* DISABLE */
+async function toggleDisable(id, cur){
+  const payload = cur
+    ? { disabled:false }
+    : { disabled:true, active:false, deviceid:"" };
+
+  await fetch(API_BASE + "/updatestaff/" + id,{
     method:"PUT",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({disabled:!cur})
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify(payload)
   });
   loadUsers();
 }
 
+/* FORCE LOGOUT */
 async function forceLogout(id){
-  await fetch(API_BASE+"/updatestaff/"+id,{
+  await fetch(API_BASE + "/updatestaff/" + id,{
     method:"PUT",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({deviceid:"",active:false,disabled:false})
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ active:false, disabled:false, deviceid:"" })
   });
   loadUsers();
 }
 
+/* DELETE */
 async function deleteUser(id){
-  if(!confirm("Delete this user?"))return;
-  await fetch(API_BASE+"/deletestaff/"+id,{method:"DELETE"});
+  if(!confirm("Delete this user?")) return;
+  await fetch(API_BASE + "/deletestaff/" + id,{ method:"DELETE" });
   loadUsers();
 }
 
@@ -231,4 +270,3 @@ loadUsers();
 </script>
 </body>
 </html>
-
